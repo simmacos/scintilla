@@ -25,7 +25,7 @@ export default class WebUIService extends Service {
                     {
                         path: "/",
                         use: [
-                            ApiGateway.serveStatic(path.join(__dirname, "../public"))
+                            ApiGateway.serveStatic(path.join(__dirname, "../../public"))
                         ]
                     }
                 ]
