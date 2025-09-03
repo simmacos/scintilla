@@ -3,6 +3,12 @@ import { ServiceBroker } from "moleculer";
 // 2. Importiamo la configurazione che abbiamo creato nel file a parte
 import brokerConfig from "./moleculer.config";
 
+
+
+import dotenv from "dotenv";
+dotenv.config(); //carica le variabili d'ambiente in tutti i servizi
+
+
 // --- INIZIO LOGICA DI AVVIO ---
 
 // 3. Creiamo una nuova istanza del ServiceBroker, passandogli la nostra configurazione.

@@ -1,10 +1,11 @@
 // web-ui.service.ts
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Service, ServiceBroker, ServiceSchema } from "moleculer";
 import ApiGateway from "moleculer-web";
 import path from "path";
 
 export default class WebUIService extends Service {
-    
+
     public constructor(broker: ServiceBroker) {
         super(broker);
         
