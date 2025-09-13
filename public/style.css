@@ -96,3 +96,43 @@ body.dark {
   --elevate2: 0 0.25rem 0.5rem 0 rgb(0 0 0 / 0.6);
   --elevate3: 0 0.375rem 0.75rem 0 rgb(0 0 0 / 0.7);
 }
+
+/* Loading animation per l'icona */
+.loading-spin {
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Barra di progresso minimale */
+.progress-line {
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 1px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--amber6, #ffb300);
+    width: 0;
+    animation: progressFill 2s ease-in-out infinite;
+}
+
+@keyframes progressFill {
+    0% { width: 0; transform: translateX(-100%); }
+    50% { width: 100%; transform: translateX(0); }
+    100% { width: 0; transform: translateX(100%); }
+}
+
+/* Fix per il posizionamento relativo del form */
+#search-form {
+    position: relative;
+}

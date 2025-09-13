@@ -46,10 +46,6 @@ export default class TestDashboardService extends Service {
             };
         } catch (error) {
             this.logger.error("Errore durante la chiamata all'API di Gemini:", error);
-            
-            // 3. MODIFICA QUI: Rilancia l'errore
-            // Questo assicura che la funzione restituisca sempre qualcosa
-            // (un oggetto in caso di successo, un errore in caso di fallimento).
             throw new Errors.MoleculerError("Servizio AI non disponibile al momento.", 502, "AI_UNAVAILABLE", { originalError: (error as Error).message });
         }
     }

@@ -12,34 +12,34 @@
     <link href="style.css" rel="stylesheet">
 </head>
 <body class="dark">
-  <header>
-      <nav>
-
-        <h6 class="max left-align">⚡ Scintilla</h6>
-        <button class="circle transparent">
-          ⚙️
-        </button>
-      </nav>
+    <header>
+        <nav>
+            <h6 class="max left-align">⚡ Scintilla</h6>
+            <button class="circle transparent">
+                ⚙️
+            </button>
+        </nav>
     </header>
 
     <main class="responsive">
+        <div class="max large-width center middle">
 
+            <!-- Search bar - bottone -->
+            <form id="search-form" class="row no-space middle-align">
+                <div class="field border large max no-round">
+                    <input type="text" id="search-input" required>
+                </div>
+                <button type="submit" class="right-round extra amber6">
+                    <i id="search-icon">search</i>
+                </button>
+            </form>
 
-      <div class="max large-width center middle">
-
-        <div class="row no-space middle-align">  <!--  Search bar - bottone-->
-          
-          <div class="field border large max no-round">
-            <input type="text">
-          </div>
-          <button class="right-round extra amber6">
-            <i>search</i>
-          </button>
+            <!-- Container per i risultati -->
+            <div id="results-container"></div>
 
         </div>
+    </main>
 
-      </div>
-
-    </main> 
+    <script src="app.js"></script>
 </body>
 </html>

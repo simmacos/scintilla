@@ -20,7 +20,7 @@ export default class WebUIService extends Service {
                     {
                         path: "/api",
                         aliases: {
-
+                            "POST scintilla.search": "scintilla.search"
                         }
                     },
                     {
