@@ -1,23 +1,35 @@
 /* Palette Amber Fulmine ⚡ - Tema Chiaro */
 :root,
 body.light {
+  --font-family: 'JetBrains Mono', monospace;
+
   /* Colori Primary - Amber dorato */
-  --primary: #ffc107;           /* Amber 600 - colore fulmine */
-  --on-primary: #000000;        /* Testo nero su amber */
-  --primary-container: #ffe082; /* Amber 300 - container chiaro */
+  --primary: #ffc107;
+  /* Amber 600 - colore fulmine */
+  --on-primary: #000000;
+  /* Testo nero su amber */
+  --primary-container: #ffe082;
+  /* Amber 300 - container chiaro */
   --on-primary-container: #000000;
 
+
   /* Colori Secondary - Amber scuro */
-  --secondary: #ffb300;         /* Amber 700 */
+  --secondary: #ffb300;
+  /* Amber 700 */
   --on-secondary: #000000;
-  --secondary-container: #ffecb3; /* Amber 200 */
+  --secondary-container: #ffecb3;
+  /* Amber 200 */
   --on-secondary-container: #000000;
 
+
   /* Colori Tertiary - Marrone neutro */
-  --tertiary: #795548;          /* Brown 500 */
+  --tertiary: #795548;
+  /* Brown 500 */
   --on-tertiary: #ffffff;
-  --tertiary-container: #d7ccc8; /* Brown 100 */
+  --tertiary-container: #d7ccc8;
+  /* Brown 100 */
   --on-tertiary-container: #000000;
+
 
   /* Colori Error */
   --error: #b00020;
@@ -25,17 +37,24 @@ body.light {
   --error-container: #fcdede;
   --on-error-container: #b00020;
 
+
   /* Background e Surface */
-  --background: #fff8e1;        /* Amber 50 - sfondo caldo */
+  --background: #fff8e1;
+  /* Amber 50 - sfondo caldo */
   --on-background: #000000;
   --surface: #fff8e1;
   --on-surface: #000000;
-  --surface-variant: #ffecb3;   /* Amber 200 */
+  --surface-variant: #ffecb3;
+  /* Amber 200 */
   --on-surface-variant: #000000;
 
+
   /* Outline */
-  --outline: #ffb300;           /* Amber 700 */
-  --outline-variant: #ffecb3;   /* Amber 200 */
+  --outline: #ffb300;
+  /* Amber 700 */
+  --outline-variant: #ffecb3;
+  /* Amber 200 */
+
 
   /* Altri colori standard */
   --shadow: #000000;
@@ -43,7 +62,8 @@ body.light {
   --inverse-surface: #2e2e2e;
   --inverse-on-surface: #f4f4f4;
   --inverse-primary: #ffc107;
-  
+
+
   /* Elevazioni e overlay */
   --overlay: rgb(0 0 0 / 0.5);
   --active: rgb(0 0 0 / 0.1);
@@ -52,43 +72,59 @@ body.light {
   --elevate3: 0 0.375rem 0.75rem 0 rgb(255 193 7 / 0.4);
 }
 
+body {
+  font-family: var(--font-family);
+}
+
+
 /* Tema Scuro con accent amber */
 body.dark {
-  --primary: #ffc107;           /* Amber mantiene vivacità */
+  --primary: #ffc107;
+  /* Amber mantiene vivacità */
   --on-primary: #000000;
-  --primary-container: #ff8f00; /* Amber scuro */
+  --primary-container: #ff8f00;
+  /* Amber scuro */
   --on-primary-container: #ffffff;
+
 
   --secondary: #ffb300;
   --on-secondary: #000000;
   --secondary-container: #e65100;
   --on-secondary-container: #ffffff;
 
-  --tertiary: #8d6e63;          /* Brown chiaro */
+
+  --tertiary: #8d6e63;
+  /* Brown chiaro */
   --on-tertiary: #ffffff;
   --tertiary-container: #5d4037;
   --on-tertiary-container: #ffffff;
+
 
   --error: #cf6679;
   --on-error: #000000;
   --error-container: #b00020;
   --on-error-container: #ffffff;
 
-  --background: #121212;        /* Sfondo scuro */
+
+  --background: #121212;
+  /* Sfondo scuro */
   --on-background: #ffffff;
   --surface: #1e1e1e;
   --on-surface: #ffffff;
   --surface-variant: #2e2e2e;
   --on-surface-variant: #ffffff;
 
+
   --outline: #ffb300;
   --outline-variant: #333333;
+
 
   --shadow: #000000;
   --scrim: #000000;
   --inverse-surface: #ffffff;
   --inverse-on-surface: #121212;
   --inverse-primary: #000000;
+
 
   --overlay: rgb(0 0 0 / 0.7);
   --active: rgb(255 193 7 / 0.2);
@@ -97,42 +133,112 @@ body.dark {
   --elevate3: 0 0.375rem 0.75rem 0 rgb(0 0 0 / 0.7);
 }
 
+
 /* Loading animation per l'icona */
 .loading-spin {
-    animation: spin 2s linear infinite;
+  animation: spin 2s linear infinite;
 }
 
+
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
+
 
 /* Barra di progresso minimale */
 .progress-line {
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 1px;
-    overflow: hidden;
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 1px;
+  overflow: hidden;
 }
+
 
 .progress-fill {
-    height: 100%;
-    background: var(--amber6, #ffb300);
-    width: 0;
-    animation: progressFill 2s ease-in-out infinite;
+  height: 100%;
+  background: var(--amber6, #ffb300);
+  width: 0;
+  animation: progressFill 2s ease-in-out infinite;
 }
 
+
 @keyframes progressFill {
-    0% { width: 0; transform: translateX(-100%); }
-    50% { width: 100%; transform: translateX(0); }
-    100% { width: 0; transform: translateX(100%); }
+  0% {
+    width: 0;
+    transform: translateX(-100%);
+  }
+
+
+  50% {
+    width: 100%;
+    transform: translateX(0);
+  }
+
+
+  100% {
+    width: 0;
+    transform: translateX(100%);
+  }
 }
+
 
 /* Fix per il posizionamento relativo del form */
 #search-form {
-    position: relative;
+  position: relative;
+}
+
+
+
+/* Reset dei margini per tutti i figli diretti del contenitore della risposta */
+.ai-content>* {
+  margin: 0;
+}
+
+
+/* Applica un margine inferiore a tutti i blocchi (p, h5, ul, etc.), tranne l'ultimo */
+.ai-content>*:not(:last-child) {
+  margin-bottom: 0.85rem;
+  /* Spaziatura verticale consistente e controllata */
+}
+
+
+/* Stili per le liste, per renderle semantiche e compatte */
+.ai-content ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+
+.ai-content li {
+  display: flex;
+  /* Allinea il punto elenco e il testo */
+  align-items: flex-start;
+  /* Allinea all'inizio se il testo va a capo */
+  line-height: 1.5;
+  /* Coerenza con l'altezza di riga dei paragrafi */
+}
+
+
+.ai-content li:not(:last-child) {
+  margin-bottom: 0.25rem;
+  /* Spazio ridotto tra gli elementi della stessa lista */
+}
+
+/* 
+ * ---- MODIFICA ---- 
+ * Correzione del colore della card di risposta nel tema chiaro.
+ */
+body.light #results-container article {
+    background-color: var(--surface-variant);
 }
