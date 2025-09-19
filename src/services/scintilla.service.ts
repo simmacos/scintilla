@@ -6,6 +6,12 @@ import { PassThrough } from "stream";
 export default class TestDashboardService extends Service {
     private ai!: GoogleGenerativeAI;
 
+
+    private requestCount: number = 0;
+    private resetTime: number = 0;
+    private maxRequests: number = 40;
+
+
     public constructor(broker: ServiceBroker) {
         super(broker);
 
@@ -27,7 +33,32 @@ export default class TestDashboardService extends Service {
         this.parseServiceSchema(schema);
     }
 
+    private checkRateLimit(): void {
+        const now = Date.now();
+
+        // Se è passata un'ora, reset del contatore
+        if (now > this.resetTime) {
+            this.requestCount = 0;
+            this.resetTime = now + (60 * 60 * 1000); // +1 ora
+        }
+
+        // Controlla se ha superato il limite
+        if (this.requestCount >= this.maxRequests) {
+            const minutiRimanenti = Math.ceil((this.resetTime - now) / (60 * 1000));
+            throw new Errors.MoleculerError(
+                `Rate limit superato! Massimo ${this.maxRequests} richieste all'ora. Riprova tra ${minutiRimanenti} minuti.`,
+                429,
+                "RATE_LIMIT_EXCEEDED"
+            );
+        }
+
+        // Incrementa il contatore
+        this.requestCount++;
+        this.logger.info(`Richieste: ${this.requestCount}/${this.maxRequests} (reset in ${Math.ceil((this.resetTime - now) / (60 * 1000))} min)`);
+    }
+
     private async handleSearch(ctx: Context<{ prompt: string }>): Promise<object> {
+        this.checkRateLimit();
         this.logger.info(`Richiesta AI ricevuta per il prompt: "${ctx.params.prompt}"`);
 
         // Prompt engineering per guidare l'AI a una formattazione migliore
@@ -73,6 +104,9 @@ EVITA assolutamente di aggiungere commenti sulla formattazione. Fornisci solo l'
         this.logger.info("Scintilla created.");
         const apiKey = process.env.GEMINI_API_KEY;
 
+        this.maxRequests = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || "40");
+        this.requestCount = 0;
+        
         if (!apiKey) {
             this.logger.warn("ATTENZIONE: La variabile d'ambiente GEMINI_API_KEY non è impostata. Il servizio AI non funzionerà.");
         }

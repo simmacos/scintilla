@@ -42,6 +42,10 @@ class ScintillaApp {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt })
         });
+        if (response.status === 429) {
+            const error = await response.json();
+            throw new Error(`Rate limit superato: ${error.message}`);
+        }
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return await response.json();
     }
