@@ -52,7 +52,7 @@ EVITA assolutamente di aggiungere commenti sulla formattazione. Fornisci solo l'
         const fullPrompt = `${systemPrompt}\n${ctx.params.prompt}`;
 
         try {
-            const model = this.ai.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+            const model = this.ai.getGenerativeModel({ model: "gemini-2.5-flash" });
             const result = await model.generateContent(fullPrompt);
             const response = result.response;
             const text = response.text();
