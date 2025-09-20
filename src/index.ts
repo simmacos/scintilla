@@ -24,10 +24,13 @@ broker.loadServices(__dirname, "**/*.service.ts");
 // Una volta che il broker è pronto, avvierà tutti i servizi caricati.
 broker.start()
     .then(() => {
-        // 6. (Opzionale ma UTILISSIMO) Avviamo il REPL di Moleculer.
-        // Questo ti darà una console interattiva per chiamare azioni,
-        // emettere eventi e controllare lo stato dei servizi in tempo reale.
-        broker.repl();
+        console.log("🚀 Scintilla avviato con successo!");
+        const isDocker = process.env.DOCKER_CONTAINER === 'true';
+
+        if (!isDocker) {
+            console.log("🔧 Avvio REPL per sviluppo locale...");
+            broker.repl();
+        }
     })
     .catch(err => {
         // Se qualcosa va storto durante l'avvio, lo stampiamo in console ed usciamo.
