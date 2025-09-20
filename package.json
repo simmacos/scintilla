@@ -16,8 +16,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "ts-node src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js"
+    "build": "rm -rf dist && tsc",           
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist"        
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

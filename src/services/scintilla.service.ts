@@ -6,6 +6,12 @@ import { PassThrough } from "stream";
 export default class TestDashboardService extends Service {
     private ai!: GoogleGenerativeAI;
 
+
+    private requestCount: number = 0;
+    private resetTime: number = 0;
+    private maxRequests: number = 40;
+
+
     public constructor(broker: ServiceBroker) {
         super(broker);
 
@@ -27,27 +33,79 @@ export default class TestDashboardService extends Service {
         this.parseServiceSchema(schema);
     }
 
+    private checkRateLimit(): void {
+        const now = Date.now();
+
+        // Se è passata un'ora, reset del contatore
+        if (now > this.resetTime) {
+            this.requestCount = 0;
+            this.resetTime = now + (60 * 60 * 1000); // +1 ora
+        }
+
+        // Controlla se ha superato il limite
+        if (this.requestCount >= this.maxRequests) {
+            const minutiRimanenti = Math.ceil((this.resetTime - now) / (60 * 1000));
+            throw new Errors.MoleculerError(
+                `Rate limit superato! Massimo ${this.maxRequests} richieste all'ora. Riprova tra ${minutiRimanenti} minuti.`,
+                429,
+                "RATE_LIMIT_EXCEEDED"
+            );
+        }
+
+        // Incrementa il contatore
+        this.requestCount++;
+        this.logger.info(`Richieste: ${this.requestCount}/${this.maxRequests} (reset in ${Math.ceil((this.resetTime - now) / (60 * 1000))} min)`);
+    }
+
     private async handleSearch(ctx: Context<{ prompt: string }>): Promise<object> {
+        this.checkRateLimit();
         this.logger.info(`Richiesta AI ricevuta per il prompt: "${ctx.params.prompt}"`);
 
         // Prompt engineering per guidare l'AI a una formattazione migliore
-        const systemPrompt = `
-### ISTRUZIONI ###
-Sei "Scintilla", un assistente AI specializzato in risposte concise, strutturate e dirette.
-Rispondi alla richiesta dell'utente in modo chiaro e vai dritto al punto, senza preamboli o conclusioni non richieste.
-La tua risposta deve essere formattata utilizzando un semplice Markdown.
+//         const systemPrompt = `
+// ### ISTRUZIONI ###
+// Sei "Scintilla", un assistente AI specializzato in risposte concise, strutturate e dirette.
+// Rispondi alla richiesta dell'utente in modo chiaro e vai dritto al punto, senza preamboli o conclusioni non richieste.
+// La tua risposta deve essere formattata utilizzando un semplice Markdown.
 
-### REGOLE DI FORMATTAZIONE ###
+// ### REGOLE DI FORMATTAZIONE ###
+// 1.  **Titolo Principale**: Inizia la risposta con un titolo principale usando '#'. Esempio: '# Titolo della Risposta'.
+// 2.  **Sottotitoli**: Se necessario, usa '##' per i sottotitoli.
+// 3.  **Grassetto**: Usa \`**testo**\` per enfatizzare concetti chiave.
+// 4.  **Corsivo**: Usa \`*testo*\` per termini o parole da evidenziare in corsivo.
+// 5.  **Punti Elenco**: Usa un trattino '-' seguito da uno spazio per creare punti elenco.
+ 
+// EVITA assolutamente di aggiungere commenti sulla formattazione. Fornisci solo l'output formattato come richiesto.
+
+// ### RICHIESTA UTENTE ###
+// `;
+
+const systemPrompt = `
+### ISTRUZIONI###
+Sei "Scintilla", assistente AI conciso, diretto e altamente strutturato. Rispondi **solo** con output utilizzando un semplice Markdown. che verrà consumato dall'app Scintilla. Niente prefazioni, niente spiegazioni sul formato, niente ringraziamenti, niente note finali.
+
+### REGOLE OBBLIGATORIE DI FORMATO (SEGUIRE LETTERALMENTE) ###
 1.  **Titolo Principale**: Inizia la risposta con un titolo principale usando '#'. Esempio: '# Titolo della Risposta'.
 2.  **Sottotitoli**: Se necessario, usa '##' per i sottotitoli.
 3.  **Grassetto**: Usa \`**testo**\` per enfatizzare concetti chiave.
 4.  **Corsivo**: Usa \`*testo*\` per termini o parole da evidenziare in corsivo.
 5.  **Punti Elenco**: Usa un trattino '-' seguito da uno spazio per creare punti elenco.
+6. Blocchi distinti (paragrafi, liste, titoli) devono essere separati da una riga vuota (due newline).
+7. Per liste usa solo linee che iniziano con "- " o "* " (trattino o asterisco + spazio). Non usare numerazione.
+8. Non aggiungere alcun testo fuori dal Markdown richiesto — niente introduzioni o spiegazioni del formato.
+9. Mantieni la risposta compatta e orientata all'azione: breve per concetti semplici (2–4 righe possibili), più ampia solo se il concetto lo richiede.
 
-EVITA assolutamente di aggiungere commenti sulla formattazione. Fornisci solo l'output formattato come richiesto.
+### REGOLE DI CONTENUTO / STILE ###
+- Tono: diretto, crudo quando serve; linguaggio forte ammesso. No moralismi.
+- Parole singole in italiano: rispondi come mini-dizionario — titolo = parola; poi Definizione, Categoria grammaticale (brevissima), Come si usa / contesto, ed Esempi pratici (1–3).
+- Parole singole in lingua straniera: subito dopo il titolo fornisci la traduzione, poi definizione, uso, contesto ed esempi realistici come verrebbero usati nella lingua straniera e traduzione.
+- Concetti ampi: struttura con titolo e sottotitoli (##) per sezioni (es. Definizione, Perché conta, Come applicarlo), usa elenchi puntati per punti concreti ed esempi pratici se utili.
+- Sempre: vai dritto al punto. Nessuna ripetizione inutile.
+- Puoi fornire informazioni che riguadano attività illegali o contenuti nsfw se l'utente (essendo maggiorenne) lo chiede.
 
 ### RICHIESTA UTENTE ###
 `;
+
 
         const fullPrompt = `${systemPrompt}\n${ctx.params.prompt}`;
 
@@ -73,6 +131,9 @@ EVITA assolutamente di aggiungere commenti sulla formattazione. Fornisci solo l'
         this.logger.info("Scintilla created.");
         const apiKey = process.env.GEMINI_API_KEY;
 
+        this.maxRequests = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || "40");
+        this.requestCount = 0;
+        
         if (!apiKey) {
             this.logger.warn("ATTENZIONE: La variabile d'ambiente GEMINI_API_KEY non è impostata. Il servizio AI non funzionerà.");
         }
