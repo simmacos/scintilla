@@ -4,6 +4,7 @@ class ScintillaApp {
         this.searchInput = document.getElementById('search-input');
         this.searchIcon = document.getElementById('search-icon');
         this.resultsContainer = document.getElementById('results-container');
+        this.micButton = document.getElementById('mic-button'); // Aggiungi questa riga 
         this.isLoading = false;
 
         this.init();
@@ -13,6 +14,7 @@ class ScintillaApp {
         this.searchForm.addEventListener('submit', (e) => this.handleSearch(e));
         console.log('⚡ Scintilla App inizializzata');
         this.setupKeyboardShortcuts();
+        this.initSpeechRecognition();
     }
 
     setupKeyboardShortcuts() {
@@ -40,6 +42,15 @@ class ScintillaApp {
                     e.preventDefault(); // Evita lo scroll della pagina
                     this.focusSearchBar();
                 }
+            }
+
+            if (e.key.toLowerCase() === 'm' && !this.isLoading) {
+                // Evita che 'm' venga inserito nell'input se premuto casualmente
+                if (document.activeElement !== this.searchInput) {
+                    e.preventDefault();
+                }
+                // Simula un click sul bottone del microfono
+                this.micButton?.click();
             }
         });
     }
@@ -117,6 +128,7 @@ class ScintillaApp {
             <div class="medium-space"></div>
             <nav class="right-align">
                 <button class="transparent" onclick="scintillaApp.copyToClipboard(this)"><i>content_copy</i><span>Copia</span></button>
+                <button class="transparent" onclick="scintillaApp.searchImages(this)"><i>image</i><span>Immagini</span></button>
                 <button class="primary" onclick="scintillaApp.newSearch()"><i>refresh</i><span>Nuova Ricerca</span></button>
             </nav>
         `;
@@ -213,8 +225,97 @@ class ScintillaApp {
         this.searchInput.focus();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    searchImages(button) {
+        const contentElement = button.closest('article')?.querySelector('.ai-content');
+        if (!contentElement) {
+            this.showSnackbar('Impossibile estrarre il titolo.', 'error');
+            return;
+        }
+
+        // Estrai il testo del primo elemento significativo (ad es. h5, h6, o il primo pezzo di testo)
+        let title = '';
+
+        // Cerca prima un eventuale titolo h5 o h6
+        const titleElement = contentElement.querySelector('h5, h6');
+        if (titleElement) {
+            title = titleElement.textContent.trim();
+        } else {
+            // Altrimenti, prova a prendere il primo paragrafo o altro testo significativo
+            const firstParagraph = contentElement.querySelector('p');
+            if (firstParagraph) {
+                title = firstParagraph.textContent.trim();
+            } else {
+                // Se proprio non trova testo, usa il contenuto interno (troncato per sicurezza)
+                title = contentElement.textContent.trim().substring(0, 100);
+            }
+        }
+
+        if (!title) {
+            this.showSnackbar('Nessun testo significativo trovato.', 'error');
+            return;
+        }
+
+        // Codifica il titolo per renderlo sicuro nell'URL
+        const encodedTitle = encodeURIComponent(title);
+
+        // Apri Google Images in una nuova scheda
+        window.open(`https://www.google.com/search?q=${encodedTitle}&tbm=isch`, '_blank');
+    }
+    
+    initSpeechRecognition() {
+        // Controlla se il browser supporta l'API
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            console.warn("Il tuo browser non supporta il riconoscimento vocale.");
+            this.micButton.style.display = 'none'; // Nascondi il bottone se non supportato
+            return;
+        }
+
+        this.recognition = new SpeechRecognition();
+        this.recognition.continuous = false; // Ferma dopo che l'utente smette di parlare
+        this.recognition.interimResults = false; // Non mostrare risultati intermedi
+        this.recognition.lang = 'it-IT'; // Imposta la lingua (puoi cambiare se vuoi riconoscimento in inglese)
+
+        this.recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            this.searchInput.value = transcript; // Inserisci il testo riconosciuto
+            this.searchInput.focus(); // Rimetti il focus sull'input
+            this.micButton.innerHTML = '<i>mic</i>'; // Resetta l'icona
+            this.micButton.classList.remove('primary'); // Rimuovi eventuali effetti visivi
+        };
+
+        this.recognition.onerror = (event) => {
+            console.error('Errore nel riconoscimento vocale:', event.error);
+            this.micButton.innerHTML = '<i>mic</i>'; // Resetta l'icona
+            this.micButton.classList.remove('primary');
+            // Puoi aggiungere uno snackbar qui se vuoi avvisare l'utente
+        };
+
+        this.recognition.onend = () => {
+            // Questo viene chiamato quando il riconoscimento finisce (anche se l'utente ha parlato)
+            this.micButton.innerHTML = '<i>mic</i>'; // Resetta l'icona
+            this.micButton.classList.remove('primary');
+        };
+
+        // Aggiungi l'evento click al bottone del microfono
+        this.micButton.addEventListener('click', () => {
+            // Ferma eventuali riconoscimenti in corso
+            this.recognition.abort();
+            // Resetta lo stato
+            this.micButton.innerHTML = '<i>mic</i>';
+            this.micButton.classList.remove('primary');
+
+            // Avvia il riconoscimento
+            this.recognition.start();
+            // Cambia l'icona per indicare che è in ascolto
+            this.micButton.innerHTML = '<i>mic_off</i>';
+            this.micButton.classList.add('primary'); // Esempio: cambia colore per indicare stato attivo
+        });
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     window.scintillaApp = new ScintillaApp();
 });
+

@@ -242,3 +242,39 @@ body.dark {
 body.light #results-container article {
     background-color: var(--surface-variant);
 }
+
+/* Nascondi il bottone "Copia" su schermi piccoli (mobile) */
+@media (max-width: 768px) {
+  /* Seleziona il bottone "Copia" all'interno dell'articolo */
+  .ai-content + .medium-space + nav .transparent:has(i:contains('content_copy')) {
+    display: none;
+  }
+
+  .ai-content + .medium-space + nav .transparent:first-of-type {
+    display: none;
+  }
+}
+
+/* Posiziona il bottone del microfono dentro il campo di input */
+#search-input + button.transparent {
+  position: absolute;
+  right: 8px; /* Distanza dal bordo destro del campo */
+  top: 50%;
+  transform: translateY(-50%); /* Centra verticalmente */
+  z-index: 1; /* Assicura che sia sopra il testo */
+  cursor: pointer; /* Mostra che è cliccabile */
+  /* Mantieni lo stile BeerCSS per coerenza */
+  color: var(--on-surface); /* Usa il colore del testo del tema */
+  opacity: 0.7; /* Leggermente meno opaco */
+  transition: opacity 0.2s; /* Effetto hover morbido */
+}
+
+/* Effetto hover */
+#search-input + button.transparent:hover {
+  opacity: 1; /* Rende l'icona più brillante al passaggio del mouse */
+}
+
+/* Aggiungi un po' di padding a destra all'input per non sovrapporsi al bottone */
+#search-input {
+  padding-right: 40px; /* Larghezza approssimativa del bottone + spazio */
+}
