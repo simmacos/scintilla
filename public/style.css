@@ -242,3 +242,15 @@ body.dark {
 body.light #results-container article {
     background-color: var(--surface-variant);
 }
+
+/* Nascondi il bottone "Copia" su schermi piccoli (mobile) */
+@media (max-width: 768px) {
+  /* Seleziona il bottone "Copia" all'interno dell'articolo */
+  .ai-content + .medium-space + nav .transparent:has(i:contains('content_copy')) {
+    display: none;
+  }
+  
+  .ai-content + .medium-space + nav .transparent:first-of-type {
+    display: none;
+  }
+}

@@ -117,6 +117,7 @@ class ScintillaApp {
             <div class="medium-space"></div>
             <nav class="right-align">
                 <button class="transparent" onclick="scintillaApp.copyToClipboard(this)"><i>content_copy</i><span>Copia</span></button>
+                <button class="transparent" onclick="scintillaApp.searchImages(this)"><i>image</i><span>Immagini</span></button>
                 <button class="primary" onclick="scintillaApp.newSearch()"><i>refresh</i><span>Nuova Ricerca</span></button>
             </nav>
         `;
@@ -213,8 +214,46 @@ class ScintillaApp {
         this.searchInput.focus();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    searchImages(button) {
+        const contentElement = button.closest('article')?.querySelector('.ai-content');
+        if (!contentElement) {
+            this.showSnackbar('Impossibile estrarre il titolo.', 'error');
+            return;
+        }
+
+        // Estrai il testo del primo elemento significativo (ad es. h5, h6, o il primo pezzo di testo)
+        let title = '';
+
+        // Cerca prima un eventuale titolo h5 o h6
+        const titleElement = contentElement.querySelector('h5, h6');
+        if (titleElement) {
+            title = titleElement.textContent.trim();
+        } else {
+            // Altrimenti, prova a prendere il primo paragrafo o altro testo significativo
+            const firstParagraph = contentElement.querySelector('p');
+            if (firstParagraph) {
+                title = firstParagraph.textContent.trim();
+            } else {
+                // Se proprio non trova testo, usa il contenuto interno (troncato per sicurezza)
+                title = contentElement.textContent.trim().substring(0, 100);
+            }
+        }
+
+        if (!title) {
+            this.showSnackbar('Nessun testo significativo trovato.', 'error');
+            return;
+        }
+
+        // Codifica il titolo per renderlo sicuro nell'URL
+        const encodedTitle = encodeURIComponent(title);
+
+        // Apri Google Images in una nuova scheda
+        window.open(`https://www.google.com/search?q=${encodedTitle}&tbm=isch`, '_blank');
+    } 
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     window.scintillaApp = new ScintillaApp();
 });
+
