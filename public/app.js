@@ -4,6 +4,7 @@ class ScintillaApp {
         this.searchInput = document.getElementById('search-input');
         this.searchIcon = document.getElementById('search-icon');
         this.resultsContainer = document.getElementById('results-container');
+        this.micButton = document.getElementById('mic-button'); // Aggiungi questa riga 
         this.isLoading = false;
 
         this.init();
@@ -13,6 +14,7 @@ class ScintillaApp {
         this.searchForm.addEventListener('submit', (e) => this.handleSearch(e));
         console.log('⚡ Scintilla App inizializzata');
         this.setupKeyboardShortcuts();
+        this.initSpeechRecognition();
     }
 
     setupKeyboardShortcuts() {
@@ -40,6 +42,15 @@ class ScintillaApp {
                     e.preventDefault(); // Evita lo scroll della pagina
                     this.focusSearchBar();
                 }
+            }
+
+            if (e.key.toLowerCase() === 'm' && !this.isLoading) {
+                // Evita che 'm' venga inserito nell'input se premuto casualmente
+                if (document.activeElement !== this.searchInput) {
+                    e.preventDefault();
+                }
+                // Simula un click sul bottone del microfono
+                this.micButton?.click();
             }
         });
     }
@@ -250,7 +261,58 @@ class ScintillaApp {
 
         // Apri Google Images in una nuova scheda
         window.open(`https://www.google.com/search?q=${encodedTitle}&tbm=isch`, '_blank');
-    } 
+    }
+    
+    initSpeechRecognition() {
+        // Controlla se il browser supporta l'API
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            console.warn("Il tuo browser non supporta il riconoscimento vocale.");
+            this.micButton.style.display = 'none'; // Nascondi il bottone se non supportato
+            return;
+        }
+
+        this.recognition = new SpeechRecognition();
+        this.recognition.continuous = false; // Ferma dopo che l'utente smette di parlare
+        this.recognition.interimResults = false; // Non mostrare risultati intermedi
+        this.recognition.lang = 'it-IT'; // Imposta la lingua (puoi cambiare se vuoi riconoscimento in inglese)
+
+        this.recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            this.searchInput.value = transcript; // Inserisci il testo riconosciuto
+            this.searchInput.focus(); // Rimetti il focus sull'input
+            this.micButton.innerHTML = '<i>mic</i>'; // Resetta l'icona
+            this.micButton.classList.remove('primary'); // Rimuovi eventuali effetti visivi
+        };
+
+        this.recognition.onerror = (event) => {
+            console.error('Errore nel riconoscimento vocale:', event.error);
+            this.micButton.innerHTML = '<i>mic</i>'; // Resetta l'icona
+            this.micButton.classList.remove('primary');
+            // Puoi aggiungere uno snackbar qui se vuoi avvisare l'utente
+        };
+
+        this.recognition.onend = () => {
+            // Questo viene chiamato quando il riconoscimento finisce (anche se l'utente ha parlato)
+            this.micButton.innerHTML = '<i>mic</i>'; // Resetta l'icona
+            this.micButton.classList.remove('primary');
+        };
+
+        // Aggiungi l'evento click al bottone del microfono
+        this.micButton.addEventListener('click', () => {
+            // Ferma eventuali riconoscimenti in corso
+            this.recognition.abort();
+            // Resetta lo stato
+            this.micButton.innerHTML = '<i>mic</i>';
+            this.micButton.classList.remove('primary');
+
+            // Avvia il riconoscimento
+            this.recognition.start();
+            // Cambia l'icona per indicare che è in ascolto
+            this.micButton.innerHTML = '<i>mic_off</i>';
+            this.micButton.classList.add('primary'); // Esempio: cambia colore per indicare stato attivo
+        });
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

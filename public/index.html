@@ -31,14 +31,19 @@
         <div class="max large-width center middle">
 
             <!-- Search bar - bottone -->
-            <form id="search-form" class="row no-space middle-align">
-                <div class="field border large max no-round">
-                    <input type="text" id="search-input" required>
-                </div>
-                <button type="submit" class="right-round extra amber6">
-                    <i id="search-icon">search</i>
-                </button>
-            </form>
+<!-- Search bar - bottone -->
+<form id="search-form" class="row no-space middle-align">
+    <div class="field border large max no-round">
+        <input type="text" id="search-input" required>
+        <!-- Bottone microfono aggiunto qui, dentro il field -->
+        <button type="button" id="mic-button" class="transparent no-round right">
+            <i>mic</i>
+        </button>
+    </div>
+    <button type="submit" class="right-round extra amber6">
+        <i id="search-icon">search</i>
+    </button>
+</form>
 
             <!-- Container per i risultati -->
             <div id="results-container"></div>
