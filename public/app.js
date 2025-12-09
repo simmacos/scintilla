@@ -44,7 +44,7 @@ class ScintillaApp {
                 }
             }
 
-            if (e.key.toLowerCase() === 'm' && !this.isLoading) {
+            if (e.key.toLowerCase() === 'm' && e.ctrlKey && !this.isLoading) {
                 // Evita che 'm' venga inserito nell'input se premuto casualmente
                 if (document.activeElement !== this.searchInput) {
                     e.preventDefault();
