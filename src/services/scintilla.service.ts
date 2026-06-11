@@ -112,22 +112,45 @@ Sei "Scintilla", assistente AI conciso, diretto e altamente strutturato. Rispond
 
         const fullPrompt = `${systemPrompt}\n${ctx.params.prompt}`;
 
-        try {
-            const model = this.ai.getGenerativeModel({ model: process.env.AI_MODEL || "gemini-2.5-flash-lite" });
-            const result = await model.generateContent(fullPrompt);
-            const response = result.response;
-            const text = response.text();
+        const maxRetries = parseInt(process.env.AI_MAX_RETRIES || "3");
+        const model = this.ai.getGenerativeModel({ model: process.env.AI_MODEL || "gemini-2.5-flash-lite" });
 
-            this.logger.info("Risposta da Gemini ricevuta con successo.");
+        let lastError: unknown;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const result = await model.generateContent(fullPrompt);
+                const text = result.response.text();
 
-            return {
-                success: true,
-                response: text
-            };
-        } catch (error) {
-            this.logger.error("Errore durante la chiamata all'API di Gemini:", error);
-            throw new Errors.MoleculerError("Servizio AI non disponibile al momento.", 502, "AI_UNAVAILABLE", { originalError: (error as Error).message });
+                this.logger.info(`Risposta da Gemini ricevuta con successo (tentativo ${attempt}/${maxRetries}).`);
+
+                return {
+                    success: true,
+                    response: text
+                };
+            } catch (error) {
+                lastError = error;
+
+                // Riprova solo per errori transitori (sovraccarico, timeout, problemi di rete).
+                if (this.isTransientError(error) && attempt < maxRetries) {
+                    const delayMs = 500 * Math.pow(2, attempt - 1); // 500ms, 1s, 2s...
+                    this.logger.warn(`Errore transitorio da Gemini (tentativo ${attempt}/${maxRetries}), riprovo tra ${delayMs}ms:`, (error as Error).message);
+                    await new Promise(resolve => setTimeout(resolve, delayMs));
+                    continue;
+                }
+                break;
+            }
         }
+
+        this.logger.error("Errore durante la chiamata all'API di Gemini:", lastError);
+        throw new Errors.MoleculerError("Servizio AI non disponibile al momento.", 502, "AI_UNAVAILABLE", { originalError: (lastError as Error).message });
+    }
+
+    private isTransientError(error: unknown): boolean {
+        const message = (error as Error)?.message?.toLowerCase() || "";
+        // Codici/segnali tipici di errori temporanei recuperabili con un retry.
+        const transientStatuses = ["429", "500", "502", "503", "504"];
+        const transientKeywords = ["overloaded", "unavailable", "timeout", "timed out", "econnreset", "etimedout", "socket hang up", "fetch failed", "network"];
+        return transientStatuses.some(s => message.includes(s)) || transientKeywords.some(k => message.includes(k));
     }
 
     private serviceCreated(): void {

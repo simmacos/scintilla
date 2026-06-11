@@ -23,7 +23,7 @@ class ScintillaApp {
             if (e.key === 'Enter' && document.activeElement === this.searchInput) {
                 e.preventDefault();
                 if (this.searchInput.value.trim() && !this.isLoading) {
-                    this.searchForm.dispatchEvent(new Event('submit'));
+                    this.searchForm.requestSubmit();
                 }
                 return;
             }
@@ -122,6 +122,8 @@ class ScintillaApp {
         const article = document.createElement('article');
         article.className = 'surface-container large-padding medium-elevate round';
         article.style.display = 'none';
+        // Conserva il markdown grezzo per costruire una nota Anki pulita in fase di copia.
+        article.dataset.raw = aiResponse;
 
         article.innerHTML = `
             <div class="ai-content">${this.formatAIResponse(aiResponse)}</div>
@@ -153,7 +155,7 @@ class ScintillaApp {
             // Titoli (#, ##)
             if (block.startsWith('#')) {
                 const level = (block.match(/^#+/) || [''])[0].length;
-                const title = block.replace(/^#+\s*/, '');
+                const title = this.escapeHtml(block.replace(/^#+\s*/, ''));
                 const tag = level === 1 ? 'h5' : 'h6';
                 const classes = level === 1 ? 'bold primary-text' : 'bold secondary-text';
                 return `<${tag} class="${classes}">${title}</${tag}>`;
@@ -176,9 +178,21 @@ class ScintillaApp {
     }
 
     formatInlineText(text) {
+        // Escape PRIMA della formattazione: neutralizza eventuale HTML/script nella risposta
+        // (l'utente controlla il prompt, quindi il modello può essere indotto a restituire markup).
+        text = this.escapeHtml(text);
         text = text.replace(/\*\*(.+?)\*\*/g, '<strong class="secondary-text bold">$1</strong>');
         text = text.replace(/\*([^*]+?)\*/g, '<em class="primary-text italic">$1</em>');
         return text;
+    }
+
+    escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     hideResults() {
@@ -203,20 +217,60 @@ class ScintillaApp {
         }, 4000);
     }
 
+    // Costruisce una nota importabile in Anki dal markdown grezzo: front = titolo, back = risposta.
+    // Formato: una riga "front<TAB>back" (il separatore di default di Anki), con il back in HTML
+    // su una sola riga così l'import non si rompe sui newline.
+    buildAnkiNote(markdown) {
+        const lines = markdown.trim().split('\n');
+        const headingIdx = lines.findIndex(l => /^#{1,6}\s/.test(l.trim()));
+
+        let title, bodyMarkdown;
+        if (headingIdx !== -1) {
+            title = lines[headingIdx].replace(/^#{1,6}\s*/, '').trim();
+            bodyMarkdown = lines.slice(headingIdx + 1).join('\n').trim();
+        } else {
+            // Nessun titolo esplicito: usa la prima riga come front e tutto il testo come back.
+            title = (lines[0] || '').trim().slice(0, 120) || 'Scintilla';
+            bodyMarkdown = markdown.trim();
+        }
+
+        const front = this.escapeHtml(title);
+        // Riusa il formatter (ora con escaping sicuro) e comprimi in un'unica riga per il TSV di Anki.
+        const back = this.formatAIResponse(bodyMarkdown)
+            .replace(/[\t\r\n]+/g, ' ')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+
+        return { front, back };
+    }
+
     copyToClipboard(button) {
-        const content = button.closest('article')?.querySelector('.ai-content');
-        if (!content) {
+        const raw = button.closest('article')?.dataset.raw;
+        if (!raw) {
             this.showSnackbar('Nessun contenuto da copiare.', 'error');
             return;
         }
-        navigator.clipboard.writeText(content.innerText).then(() => {
-            this.showSnackbar('Risposta copiata negli appunti!');
+        const { front, back } = this.buildAnkiNote(raw);
+        const text = `${front}\t${back}`;
+        const doSuccess = () => {
+            this.showSnackbar('Nota copiata! Incolla in un file .txt e importala in Anki.');
             button.innerHTML = '<i>check</i><span>Copiato!</span>';
             setTimeout(() => button.innerHTML = '<i>content_copy</i><span>Copia</span>', 2000);
-        }).catch(err => {
-            console.error('Errore di copia:', err);
-            this.showSnackbar('Impossibile copiare il testo.', 'error');
-        });
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(doSuccess).catch(() => {
+                document.execCommand('copy') ? doSuccess() : this.showSnackbar('Impossibile copiare il testo.', 'error');
+            });
+        } else {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy') ? doSuccess() : this.showSnackbar('Impossibile copiare il testo.', 'error');
+            document.body.removeChild(ta);
+        }
     }
 
     newSearch() {
