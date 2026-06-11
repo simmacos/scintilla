@@ -235,13 +235,48 @@ class ScintillaApp {
         }
 
         const front = this.escapeHtml(title);
-        // Riusa il formatter (ora con escaping sicuro) e comprimi in un'unica riga per il TSV di Anki.
-        const back = this.formatAIResponse(bodyMarkdown)
-            .replace(/[\t\r\n]+/g, ' ')
-            .replace(/\s{2,}/g, ' ')
-            .trim();
+        const back = this.formatForAnki(bodyMarkdown);
 
         return { front, back };
+    }
+
+    // Converte il markdown in HTML pulito adatto ad Anki: niente classi BeerCSS, niente bullet
+    // manuali (li ci pensa <ul>), tutto su una sola riga per non rompere l'import TSV.
+    formatForAnki(markdown) {
+        const blocks = markdown.trim().split(/\n\s*\n/).filter(b => b.trim());
+
+        const html = blocks.map(block => {
+            block = block.trim();
+
+            // Titoli (#, ##, ...) -> <b> (semplice e leggibile in Anki)
+            if (block.startsWith('#')) {
+                const title = this.escapeHtml(block.replace(/^#+\s*/, ''));
+                return `<b>${title}</b>`;
+            }
+
+            // Liste (righe che iniziano con - o *)
+            if (/^\s*[\-\*]\s/.test(block)) {
+                const items = block.split('\n')
+                    .filter(l => l.trim())
+                    .map(line => `<li>${this.formatInlineAnki(line.replace(/^\s*[\-\*]\s/, ''))}</li>`)
+                    .join('');
+                return `<ul>${items}</ul>`;
+            }
+
+            // Paragrafo normale
+            return `<p>${this.formatInlineAnki(block)}</p>`;
+        }).join('');
+
+        // Comprimi in un'unica riga: il separatore di campo di Anki è il TAB e i record vanno a capo.
+        return html.replace(/[\t\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+    }
+
+    // Grassetto/corsivo in HTML semplice (<b>/<i>), con escaping del testo.
+    formatInlineAnki(text) {
+        text = this.escapeHtml(text);
+        text = text.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+        text = text.replace(/\*([^*]+?)\*/g, '<i>$1</i>');
+        return text;
     }
 
     copyToClipboard(button) {
