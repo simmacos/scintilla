@@ -23,11 +23,57 @@
             <a href="/" class="max left-align">
                 <h6>⚡ Scintilla</h6>
             </a>
-            <button class="circle transparent">
+            <button class="circle transparent" data-ui="#settings-dialog">
                 ⚙️
             </button>
         </nav>
     </header>
+
+    <dialog id="settings-dialog">
+        <h5>Impostazioni</h5>
+        <div class="space"></div>
+
+        <div class="field label border">
+            <select id="setting-speech-lang">
+                <option value="it-IT">Italiano</option>
+                <option value="en-US">English</option>
+                <option value="es-ES">Español</option>
+                <option value="fr-FR">Français</option>
+                <option value="de-DE">Deutsch</option>
+                <option value="pt-PT">Português</option>
+            </select>
+            <label>Lingua riconoscimento vocale</label>
+        </div>
+
+        <div class="field label border">
+            <select id="setting-copy-format">
+                <option value="anki">Nota Anki (titolo + risposta)</option>
+                <option value="plain">Testo semplice</option>
+            </select>
+            <label>Formato copia</label>
+        </div>
+
+        <div class="field label border">
+            <select id="setting-anki-front">
+                <option value="title">Titolo della risposta</option>
+                <option value="question">La tua domanda</option>
+            </select>
+            <label>Fronte della card Anki</label>
+        </div>
+
+        <div class="row middle-align">
+            <label class="switch">
+                <input type="checkbox" id="setting-dark">
+                <span></span>
+            </label>
+            <span>Tema scuro</span>
+        </div>
+
+        <div class="space"></div>
+        <nav class="right-align">
+            <button data-ui="#settings-dialog">Chiudi</button>
+        </nav>
+    </dialog>
 
     <main class="responsive">
         <div class="max large-width center middle">

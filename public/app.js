@@ -11,10 +11,74 @@ class ScintillaApp {
     }
 
     init() {
+        this.loadSettings();
         this.searchForm.addEventListener('submit', (e) => this.handleSearch(e));
         console.log('⚡ Scintilla App inizializzata');
         this.setupKeyboardShortcuts();
+        this.setupSettingsPanel();
+        this.applySettings();
         this.initSpeechRecognition();
+    }
+
+    loadSettings() {
+        const defaults = { speechLang: 'it-IT', ankiFront: 'title', copyFormat: 'anki', dark: true };
+        let saved = {};
+        try {
+            saved = JSON.parse(localStorage.getItem('scintilla-settings')) || {};
+        } catch (_) { /* localStorage non disponibile o JSON corrotto: usa i default */ }
+        this.settings = { ...defaults, ...saved };
+    }
+
+    saveSettings() {
+        try {
+            localStorage.setItem('scintilla-settings', JSON.stringify(this.settings));
+        } catch (_) { /* ignora se localStorage non è disponibile */ }
+    }
+
+    applySettings() {
+        // Tema
+        document.body.classList.toggle('dark', this.settings.dark);
+        document.body.classList.toggle('light', !this.settings.dark);
+        // Lingua del riconoscimento vocale (se già inizializzato)
+        if (this.recognition) this.recognition.lang = this.settings.speechLang;
+    }
+
+    setupSettingsPanel() {
+        const langSel = document.getElementById('setting-speech-lang');
+        const frontSel = document.getElementById('setting-anki-front');
+        const copySel = document.getElementById('setting-copy-format');
+        const darkChk = document.getElementById('setting-dark');
+
+        if (copySel) {
+            copySel.value = this.settings.copyFormat;
+            copySel.addEventListener('change', () => {
+                this.settings.copyFormat = copySel.value;
+                this.saveSettings();
+            });
+        }
+        if (langSel) {
+            langSel.value = this.settings.speechLang;
+            langSel.addEventListener('change', () => {
+                this.settings.speechLang = langSel.value;
+                this.saveSettings();
+                this.applySettings();
+            });
+        }
+        if (frontSel) {
+            frontSel.value = this.settings.ankiFront;
+            frontSel.addEventListener('change', () => {
+                this.settings.ankiFront = frontSel.value;
+                this.saveSettings();
+            });
+        }
+        if (darkChk) {
+            darkChk.checked = this.settings.dark;
+            darkChk.addEventListener('change', () => {
+                this.settings.dark = darkChk.checked;
+                this.saveSettings();
+                this.applySettings();
+            });
+        }
     }
 
     setupKeyboardShortcuts() {
@@ -117,13 +181,14 @@ class ScintillaApp {
         if (progressBar) progressBar.remove();
     }
 
-    showResults(aiResponse) {
+    showResults(aiResponse, prompt = '') {
         this.hideResults();
         const article = document.createElement('article');
         article.className = 'surface-container large-padding medium-elevate round';
         article.style.display = 'none';
-        // Conserva il markdown grezzo per costruire una nota Anki pulita in fase di copia.
+        // Conserva il markdown grezzo e la domanda per costruire una nota Anki pulita in fase di copia.
         article.dataset.raw = aiResponse;
+        article.dataset.prompt = prompt;
 
         article.innerHTML = `
             <div class="ai-content">${this.formatAIResponse(aiResponse)}</div>
@@ -220,7 +285,7 @@ class ScintillaApp {
     // Costruisce una nota importabile in Anki dal markdown grezzo: front = titolo, back = risposta.
     // Formato: una riga "front<TAB>back" (il separatore di default di Anki), con il back in HTML
     // su una sola riga così l'import non si rompe sui newline.
-    buildAnkiNote(markdown) {
+    buildAnkiNote(markdown, prompt = '') {
         const lines = markdown.trim().split('\n');
         const headingIdx = lines.findIndex(l => /^#{1,6}\s/.test(l.trim()));
 
@@ -229,15 +294,22 @@ class ScintillaApp {
             title = lines[headingIdx].replace(/^#{1,6}\s*/, '').trim();
             bodyMarkdown = lines.slice(headingIdx + 1).join('\n').trim();
         } else {
-            // Nessun titolo esplicito: usa la prima riga come front e tutto il testo come back.
             title = (lines[0] || '').trim().slice(0, 120) || 'Scintilla';
             bodyMarkdown = markdown.trim();
         }
 
-        const front = this.escapeHtml(title);
-        const back = this.formatForAnki(bodyMarkdown);
+        let front, backMarkdown;
+        if (this.settings?.ankiFront === 'question' && prompt.trim()) {
+            // Fronte = domanda dell'utente; retro = risposta completa (incluso il titolo).
+            front = this.escapeHtml(prompt.trim());
+            backMarkdown = markdown.trim();
+        } else {
+            // Fronte = titolo della risposta; retro = corpo senza il titolo (già sul fronte).
+            front = this.escapeHtml(title);
+            backMarkdown = bodyMarkdown;
+        }
 
-        return { front, back };
+        return { front, back: this.formatForAnki(backMarkdown) };
     }
 
     // Converte il markdown in HTML pulito adatto ad Anki: niente classi BeerCSS, niente bullet
@@ -280,15 +352,27 @@ class ScintillaApp {
     }
 
     copyToClipboard(button) {
-        const raw = button.closest('article')?.dataset.raw;
+        const article = button.closest('article');
+        const raw = article?.dataset.raw;
         if (!raw) {
             this.showSnackbar('Nessun contenuto da copiare.', 'error');
             return;
         }
-        const { front, back } = this.buildAnkiNote(raw);
-        const text = `${front}\t${back}`;
+
+        let text, successMessage;
+        if (this.settings?.copyFormat === 'plain') {
+            // Testo semplice: il contenuto leggibile così come mostrato a schermo.
+            text = (article.querySelector('.ai-content')?.innerText || '').trim();
+            successMessage = 'Risposta copiata negli appunti!';
+        } else {
+            // Nota Anki: una riga "titolo<TAB>risposta" importabile.
+            const { front, back } = this.buildAnkiNote(raw, article.dataset.prompt || '');
+            text = `${front}\t${back}`;
+            successMessage = 'Nota copiata! Incolla in un file .txt e importala in Anki.';
+        }
+
         const doSuccess = () => {
-            this.showSnackbar('Nota copiata! Incolla in un file .txt e importala in Anki.');
+            this.showSnackbar(successMessage);
             button.innerHTML = '<i>check</i><span>Copiato!</span>';
             setTimeout(() => button.innerHTML = '<i>content_copy</i><span>Copia</span>', 2000);
         };
@@ -364,7 +448,7 @@ class ScintillaApp {
         this.recognition = new SpeechRecognition();
         this.recognition.continuous = false; // Ferma dopo che l'utente smette di parlare
         this.recognition.interimResults = false; // Non mostrare risultati intermedi
-        this.recognition.lang = 'it-IT'; // Imposta la lingua (puoi cambiare se vuoi riconoscimento in inglese)
+        this.recognition.lang = this.settings.speechLang; // Lingua impostata dalle Impostazioni
 
         this.recognition.onresult = (event) => {
             const transcript = event.results[0][0].transcript;
